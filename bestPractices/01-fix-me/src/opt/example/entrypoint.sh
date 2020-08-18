@@ -10,6 +10,4 @@ log "Welcome in entrypoint."
 
 sleep 5
 
-print-log
-
-"$@"
+exec "$@"
