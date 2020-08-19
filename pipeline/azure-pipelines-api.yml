@@ -1,0 +1,44 @@
+name: 1.0.0$(Rev:.r)
+
+trigger:
+  paths:
+    include:
+    - src/PartsUnlimited.API
+    - k8s/helm/partsunlimited-api
+
+pool:
+  # use this for private
+  name: 'k8s-pu-agents'
+  # use this for hosted
+  #vmImage: 'Ubuntu-16.04' # hosted
+
+variables:
+  azureSubEndpoint: '10M Client Demo'
+  acrName: 'cdk8spu.azurecr.io'
+  imageRepoName: 'partsunlimited-api'
+
+steps:
+# - script: docker build -f Dockerfile -t $(imageName) .
+#   displayName: 'docker build'
+#   continueOnError: true
+
+- task: Docker@1
+  displayName: 'Build the image'
+  inputs:
+    dockerfile: 'api.Dockerfile'
+    azureSubscriptionEndpoint: '$(azureSubEndpoint)'
+    azureContainerRegistry: '$(acrName)'
+    imageName: '$(imageRepoName):$(Build.BuildNumber)'
+    arguments: '--build-arg version=$(Build.BuildNumber)'
+  continueOnError: false # only set to true if you are running unit tests and need the results
+
+- task: Docker@1
+  displayName: 'Push the image'
+  inputs:
+    command: 'Push an image'
+    azureSubscriptionEndpoint: '$(azureSubEndpoint)'
+    azureContainerRegistry: '$(acrName)'
+    imageName: '$(imageRepoName):$(Build.BuildNumber)'
+  condition: succeeded()
+
+

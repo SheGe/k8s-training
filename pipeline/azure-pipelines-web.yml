@@ -1,0 +1,70 @@
+name: 1.0.0$(Rev:.r)
+
+trigger:
+  paths:
+    include:
+    - src/PartsUnlimitedWebsite
+    - k8s/helm/partsunlimited-website
+
+pool:
+  name: "k8s-pu-agents" # private pool
+  # vmImage: 'Ubuntu-16.04'
+
+variables:
+  azureSubEndpoint: '10M Client Demo'
+  acrName: 'cdk8spu.azurecr.io'
+  imageRepoName: 'partsunlimited-website'
+  SQ_SVC_NAME: 'sonarqube-sonarqube'
+  SQ_NAMESPACE: 'sonarqube'
+
+steps:
+# - script: docker build -f Dockerfile -t $(imageName) .
+#   displayName: 'docker build'
+#   continueOnError: true
+
+# get the clusterIP of sonarqube
+- script: |
+    export ip=$(kubectl get svc $(SQ_SVC_NAME) -n $(SQ_NAMESPACE) -o=jsonpath="{.spec.clusterIP}")
+    echo "sonarqube service ip is $ip"
+    echo "##vso[task.setvariable variable=SQ_SVC_IP]$ip"
+
+- task: Docker@1
+  displayName: 'Build the image'
+  inputs:
+    dockerfile: 'website.Dockerfile'
+    azureSubscriptionEndpoint: '$(azureSubEndpoint)'
+    azureContainerRegistry: '$(acrName)'
+    imageName: '$(imageRepoName):$(Build.BuildNumber)'
+    arguments: '--build-arg version=$(Build.BuildNumber) --build-arg SQ_HOST=sqhost --add-host "sqhost:$(SQ_SVC_IP)"'
+  continueOnError: true # to make sure we get the test results even when the tests fail
+
+- script: |
+    export id=$(docker images --filter "label=test=true" -q | head -1)
+    docker create --name testcontainer $id
+    docker cp testcontainer:/testresults ./testresults
+    docker rm testcontainer
+  displayName: 'get test results'
+
+- task: PublishTestResults@2
+  inputs:
+    testResultsFormat: 'VSTest'
+    testResultsFiles: '**/test*.xml' 
+    searchFolder: '$(System.DefaultWorkingDirectory)/testresults'
+    publishRunAttachments: true
+  displayName: 'Publish test results'
+
+- task: PublishCodeCoverageResults@1
+  inputs:
+    codeCoverageTool: 'cobertura'
+    summaryFileLocation: '$(System.DefaultWorkingDirectory)/testresults/coverage/coverage.cobertura.xml'
+    reportDirectory: '$(System.DefaultWorkingDirectory)/testresults/coverage/reports'
+  displayName: 'Publish coverage reports'
+
+- task: Docker@1
+  displayName: 'Push the image'
+  inputs:
+    command: 'Push an image'
+    azureSubscriptionEndpoint: '$(azureSubEndpoint)'
+    azureContainerRegistry: '$(acrName)'
+    imageName: '$(imageRepoName):$(Build.BuildNumber)'
+  condition: succeeded()
