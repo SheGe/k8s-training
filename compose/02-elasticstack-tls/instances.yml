@@ -1,0 +1,12 @@
+instances:
+  - name: es
+    dns:
+      - es
+      - localhost
+    ip:
+      - 127.0.0.1
+
+  - name: 'kib'
+    dns:
+      - kib
+      - localhost

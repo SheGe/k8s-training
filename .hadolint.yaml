@@ -1,2 +1,3 @@
 trustedRegistries:
+  - docker.elastic.co
   - docker.io
