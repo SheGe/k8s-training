@@ -5,5 +5,5 @@
             "/k8s/*"
         ]
     },
-    "hadolint.hadolintPath": "./.vscode/hadolint-1.18.0-windows.exe"
+    "hadolint.hadolintPath": "./.vscode/hadolint-1.18.0-linux"
 }
