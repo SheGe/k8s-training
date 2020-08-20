@@ -1,24 +1,14 @@
-FROM ubuntu:latest
+FROM ubuntu:20.04
 
-ENV LOG_FILE=/var/log/example/app.log
-
-VOLUME [ "/var/log/example" ]
-
-RUN mkdir -p "${LOG_FILE%/*}" \
-  && echo "LOG FILE" >> ${LOG_FILE}
-
-RUN apt-get update
-
-RUN apt-get install -y --no-install-recommends \
+RUN apt-get update \
+&& apt-get install -y --no-install-recommends \
   g++ \
   gcc \
   libc6-dev \
-  make
+  make \
+&& rm -rf /var/lib/apt/lists/*
 
-RUN rm -rf /var/lib/apt/lists/*
-
-ADD ./src/Makefile /var/lib/my-app/Makefile
-ADD ./src/*.sh /opt/example/
+COPY src/ /
 
 WORKDIR /var/lib/my-app
 
