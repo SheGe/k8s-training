@@ -2,10 +2,23 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: init-demo
+  labels:
+    environment: qa
 spec:
+  initContainers:
+    - name: install
+      image: busybox
+      command:
+        - wget
+        - "-O"
+        - "/work-dir/index.html"
+        - http://kubernetes.io
+      volumeMounts:
+        - name: workdir
+          mountPath: "/work-dir"
   containers:
     - name: nginx
-      image: nginx
+      image: nginx:1.19.2
       ports:
         - containerPort: 80
       volumeMounts:
@@ -18,18 +31,6 @@ spec:
         limits:
           memory: "128Mi"
           cpu: "500m"
-  # These containers are run during pod initialization
-  initContainers:
-    - name: install
-      image: busybox
-      command:
-        - wget
-        - "-O"
-        - "/work-dir/index.html"
-        - http://kubernetes.io
-      volumeMounts:
-        - name: workdir
-          mountPath: "/work-dir"
   dnsPolicy: Default
   volumes:
     - name: workdir

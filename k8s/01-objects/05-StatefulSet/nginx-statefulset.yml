@@ -28,17 +28,6 @@ spec:
       labels:
         app: nginx
     spec:
-      initContainers:
-        - name: nginx-init
-          image: busybox
-          command:
-            - sh
-            - -c
-            - >
-              echo "$(hostname)" > /usr/share/nginx/html/index.html
-          volumeMounts:
-            - name: www
-              mountPath: /usr/share/nginx/html
       containers:
         - name: nginx
           image: k8s.gcr.io/nginx-slim:0.8
